@@ -12,7 +12,6 @@ Link: http://www.cse.cuhk.edu.hk/~leojia/papers/L0smooth_Siggraph_Asia2011.pdf
 from typing import Optional
 import cv2
 import numpy as np
-from scipy.fftpack import fft2, ifft2
 from .psf2otf import psf2otf
 
 
