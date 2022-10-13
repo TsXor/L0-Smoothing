@@ -16,12 +16,12 @@ import cv2
 import numpy as np
 import pyopencl as cl
 import pyopencl.array as clArray
-from .matlab_utils import sync_ctx, psf2otf, circshift, mask_index, fftn, ifftn
+from .matlab_utils import psf2otf, circshift2D, fftn, ifftn
+from .ocl_func import fancyindex2D
 
 
 ctx = cl.create_some_context(interactive=False)
 queue = cl.CommandQueue(ctx)
-sync_ctx(ctx, queue)
 
 def split(img):
     return [img[...,n] for n in range(img.shape[-1])]
@@ -67,14 +67,14 @@ def L0_Smoothing(
     while beta < beta_max:
         Denormin = 1 + beta*Denormin2
         
-        h = circshift(S, (0, -1))-S
-        v = circshift(S, (-1, 0))-S
+        h = circshift2D(S, (0, -1))-S
+        v = circshift2D(S, (-1, 0))-S
         grad = h**2 + v**2
         idx = grad < (lambda_ / beta)
-        h = mask_index(h, idx, 0); v = mask_index(v, idx, 0)
+        h = fancyindex2D(h, idx, 0); v = fancyindex2D(v, idx, 0)
         
-        h_diff = circshift(h, (0, 1))-h
-        v_diff = circshift(v, (1, 0))-v
+        h_diff = circshift2D(h, (0, 1))-h
+        v_diff = circshift2D(v, (1, 0))-v
         Normin2 = h_diff + v_diff
         Normin2 = beta * fftn(Normin2, axes = (-2,-1))
 
