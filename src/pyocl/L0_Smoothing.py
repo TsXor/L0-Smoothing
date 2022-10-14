@@ -59,11 +59,23 @@ def L0_Smoothing(
     beta_max: Optional[float] = 1e5,
     mode='pyvkfft'
 ):
-    beta = 2 * lambda_
-    sizey, sizex = img.shape
-    
     S = img / 255
     S = clArray.to_device(queue, S)
+    S = L0_Smoothing_CL(S, lambda_, kappa, beta_max, mode)
+    ret = S.get()
+    ret = np.clip((ret*255), 0, 255).astype(np.uint8)
+    return ret
+
+
+def L0_Smoothing_CL(
+    S: clArray.Array,
+    lambda_: Optional[float] = 2e-2,
+    kappa: Optional[float] = 2.0,
+    beta_max: Optional[float] = 1e5,
+    mode='pyvkfft'
+):
+    beta = 2 * lambda_
+    sizey, sizex = S.shape
 
     ################
     # Padding for gpyfft
@@ -75,8 +87,8 @@ def L0_Smoothing(
     ################
 
     Normin1 = fftn(S, axes = (-2,-1), mode=mode)
-    otfx = psf2otf(clArray.to_device(queue, np.array([[-1,   1]])), S.shape, mode=mode)
-    otfy = psf2otf(clArray.to_device(queue, np.array([[-1], [1]])), S.shape, mode=mode)
+    otfx = psf2otf(clArray.to_device(S.queue, np.array([[-1,   1]])), S.shape, mode=mode)
+    otfy = psf2otf(clArray.to_device(S.queue, np.array([[-1], [1]])), S.shape, mode=mode)
 
     Denormin2 = otfx.real**2 + otfx.imag**2 + otfy.real**2 + otfy.imag**2
     
@@ -106,6 +118,4 @@ def L0_Smoothing(
         S = crop2D(S, slice(sizey), slice(sizex))
     ################
 
-    ret = S.get()
-    ret = np.clip((ret*255), 0, 255).astype(np.uint8)
-    return ret
+    return S
