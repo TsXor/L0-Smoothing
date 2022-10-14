@@ -12,6 +12,8 @@ def main():
                         help='input file or folder path')
     parser.add_argument('fout', metavar='FILE OR FOLDER', type=str,
                         help='output file or folder path')
+    parser.add_argument('--fft', metavar='FFT LIB NAME', type=str, default='pyvkfft',
+                        help='choose OpenCL FFT library to use, supported: pyvkfft(default), reikna, gpyfft')
     parser.add_argument('--noaccel', action='store_true',
                         help="disable OpenCL acceleration")
     parser.add_argument('--params', type=float, nargs='+', metavar='', default=[],
@@ -33,7 +35,7 @@ def main():
         if args.noaccel:
             smoothed = L0_Smoothing(img, *args.params)
         else:
-            smoothed = L0_Smoothing_accel(img, *args.params)
+            smoothed = L0_Smoothing_accel(img, *args.params, mode=args.fft)
         return smoothed
 
     in_path = pathlib.Path(args.fin)

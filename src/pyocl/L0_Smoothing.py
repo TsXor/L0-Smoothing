@@ -68,10 +68,10 @@ def L0_Smoothing(
     ################
     # Padding for gpyfft
     ################
-    print('Padding array... ', end='')
     if mode=='gpyfft':
+        print('Padding array... ', end='')
         S = gpyfft_pad2D(S)
-    print('done.')
+        print('done.')
     ################
 
     Normin1 = fftn(S, axes = (-2,-1), mode=mode)
