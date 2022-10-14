@@ -1,4 +1,4 @@
-import pyopencl.array as clArray
+from L0_Smoothing.pyocl.GCArray import GCArray as clArray
 
 def fancyindex2D(func, queue, arr, mask, value=0):
     masked = clArray.empty_like(arr)

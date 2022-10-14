@@ -1,3 +1,6 @@
+# Generated size table
+sizetable_*_*quick.npy
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

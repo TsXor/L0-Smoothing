@@ -16,6 +16,7 @@ funcs = [
     'circshift2D',
     'fancyindex2D',
     'pad2D_constant',
+    'crop2D',
 ]
 
 for fn in funcs:

@@ -1,14 +1,22 @@
 import pyopencl as cl
 import pyopencl.cltypes as cltypes
+import numpy as np
 
 def cltype_map(dtype):
     if dtype.type==cltypes.int:
         return 'int'
-    if dtype.type==cltypes.float:
+    elif dtype.type==cltypes.float:
         return 'float'
-    if dtype.type==cltypes.double:
+    elif dtype.type==cltypes.double:
         return 'double'
-    raise NotImplementedError(dtype.type)
+    elif dtype.type==cltypes.double:
+        return 'double'
+    elif dtype.type==np.complex64:
+        return 'float2'
+    elif dtype.type==np.complex128:
+        return 'double2'
+    else:
+        raise NotImplementedError(dtype.type)
 
 class CLFunction:
     def __init__(self, funcname, clcode, pyfunc):

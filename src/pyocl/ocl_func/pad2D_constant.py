@@ -1,4 +1,4 @@
-import pyopencl.array as clArray
+from L0_Smoothing.pyocl.GCArray import GCArray as clArray
 import pyopencl.cltypes as cltypes
 
 def pad2D_constant(func, queue, arr, padv, constant):

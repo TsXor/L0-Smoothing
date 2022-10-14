@@ -15,12 +15,13 @@ from typing import Optional
 import cv2
 import numpy as np
 import pyopencl as cl
-import pyopencl.array as clArray
+from L0_Smoothing.pyocl.GCArray import GCArray as clArray
+
 from .matlab_utils import psf2otf, circshift2D, fftn, ifftn
-from .ocl_func import fancyindex2D
+from .ocl_func import fancyindex2D, pad2D_constant, crop2D
+from .get_size import get_nearest_bigger
 
-
-ctx = cl.create_some_context(interactive=False)
+ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 
 def split(img):
@@ -42,26 +43,41 @@ def multi_channel(decorated):
         return ret
     return multi_op
 
+def gpyfft_pad2D(arr):
+    sy, sx = arr.shape
+    nsx = get_nearest_bigger(sx)
+    nsy = get_nearest_bigger(sy)
+    pads = ((0, nsy-sy), (0, nsx-sx))
+    return pad2D_constant(arr, pads, 0.5)
+
 
 @multi_channel
 def L0_Smoothing(
     img: np.ndarray,
     lambda_: Optional[float] = 2e-2,
     kappa: Optional[float] = 2.0,
-    beta_max: Optional[float] = 1e5
+    beta_max: Optional[float] = 1e5,
+    mode='pyvkfft'
 ):
     beta = 2 * lambda_
     sizey, sizex = img.shape
     
     S = img / 255
     S = clArray.to_device(queue, S)
-    
-    Normin1 = fftn(S, axes = (-2,-1))
-    otfx = psf2otf(clArray.to_device(queue, np.array([[-1,   1]])), img.shape)
-    otfy = psf2otf(clArray.to_device(queue, np.array([[-1], [1]])), img.shape)
-    
-    #Denormin2 = np.square(abs(otfx)) + np.square(abs(otfy))
-    # 开方再平方挺浪费的，所以直接实部和虚部平方相加罢！
+
+    ################
+    # Padding for gpyfft
+    ################
+    print('Padding array... ', end='')
+    if mode=='gpyfft':
+        S = gpyfft_pad2D(S)
+    print('done.')
+    ################
+
+    Normin1 = fftn(S, axes = (-2,-1), mode=mode)
+    otfx = psf2otf(clArray.to_device(queue, np.array([[-1,   1]])), S.shape, mode=mode)
+    otfy = psf2otf(clArray.to_device(queue, np.array([[-1], [1]])), S.shape, mode=mode)
+
     Denormin2 = otfx.real**2 + otfx.imag**2 + otfy.real**2 + otfy.imag**2
     
     while beta < beta_max:
@@ -76,16 +92,19 @@ def L0_Smoothing(
         h_diff = circshift2D(h, (0, 1))-h
         v_diff = circshift2D(v, (1, 0))-v
         Normin2 = h_diff + v_diff
-        Normin2 = beta * fftn(Normin2, axes = (-2,-1))
+        Normin2 = beta * fftn(Normin2, axes = (-2,-1), mode=mode)
 
         FS = (Normin1 + Normin2) / Denormin
-        S = ifftn(FS, axes = (-2,-1)).real
-        
-        # 下面是我见过最铸币的玩意：
-        #if False:
-        #    ...（若干行代码）
-        
+        S = ifftn(FS, axes = (-2,-1), mode=mode).real
+
         beta = beta * kappa
+
+    ################
+    # Cropping for gpyfft
+    ################
+    if mode=='gpyfft':
+        S = crop2D(S, slice(sizey), slice(sizex))
+    ################
 
     ret = S.get()
     ret = np.clip((ret*255), 0, 255).astype(np.uint8)
