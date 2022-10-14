@@ -13,3 +13,4 @@ rmdir /s /q dist >nul
 move /y wheel_struct\dist . >nul
 del /s /q wheel_struct >nul
 rmdir /s /q wheel_struct >nul
+pause
