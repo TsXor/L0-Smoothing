@@ -8,7 +8,9 @@
     href="http://www.nthere.in/2020/06/15/Image-Smoothing-using-L0-Gradient-Minimization/">Blog
     Post</a>
     |
-    <a href="https://github.com/nrupatunga/L0-Smoothing/issues">Report Bug</a>
+    <a href="https://github.com/nrupatunga/L0-Smoothing/issues">Report Bug on Numpy Version</a>
+    |
+    <a href="https://github.com/TsXor/L0-Smoothing/issues">Report Bug on PyOpenCL Version</a>
     <br />
   </p>
 </p>
@@ -67,7 +69,7 @@ cd builder
 
 # install via pip
 cd dist
-pip install L0_Smoothing-0.1-py3-none-any.whl
+pip install L0_Smoothing-*-py3-none-any.whl
 ```
 
 <!--USAGE-->
@@ -88,12 +90,31 @@ from PIL import Image
 img = np.asarray(Image.open(r'/path/to/your/image'))
 
 # Parameters:
+# L0_Smoothing(img, asHSV=False, lambda_=2e-2, kappa=2.0, beta_max=1e5, mode='pyvkfft')
 # L0_Smoothing_accel(img, asHSV=False, lambda_=2e-2, kappa=2.0, beta_max=1e5)
 #     img: numpy array of the image to be smoothed
 #     asHSV: This module does operation per channel, and you can choose to convert it to HSV
 #            while operating by giving parameter asHSV=True.
 #     lambda_, kappa, beta_max: read the paper
+#     mode: the OpenCL FFT backend to use
 smoothed = L0_Smoothing_accel(img)
+```
+If you are programming with `pyopencl`, you can use this module like this:  
+```python
+import pyopencl as cl
+import numpy as np
+import pyopencl.array as clArray
+
+from L0_Smoothing import L0_Smoothing_CL
+
+ctx = cl.create_some_context(interactive=False)
+queue = cl.CommandQueue(ctx)
+
+img = np.asarray(Image.open(r'/path/to/your/image'))
+S = clArray.to_device(queue, img/255)
+S_smoothed = L0_Smoothing_CL(S)
+img = S.get()*255
+img = np.clip(img, 0, 255).astype(np.uint8)
 ```
 Hint: You can try to apply blur before doing smoothing if the smoothing effect is not ideal.  
 
@@ -122,3 +143,6 @@ L0-Smoothing /path/to/your/image/folder /path/you/want/to/save
   Try adding switch `--noaccel` to use slower numpy version.  
 - pip throws errors (on compiling) when I am installing pyvkfft!  
   Download pyvkfft package bundled with OpenCL SDK from release and install it with pip.  
+  Or just download binary package from release and install it.  
+- Binary packages have problem on my machine.  
+  Use `reikna` as fft backend, it is pure python.
