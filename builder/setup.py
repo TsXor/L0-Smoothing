@@ -7,7 +7,7 @@ with open(wheel_dir/"README.md") as f:
 
 setuptools.setup(
     name="L0-Smoothing",
-    version="0.1.2",
+    version="0.1.3",
     license='MIT',
 
     author="Nrupatunga(normal), TsXor(pyocl)",
