@@ -1,6 +1,6 @@
 __kernel void fancyindex2D(
     __global DTYPE * arr_in,
-    __global bool * arr_mask,
+    __global int * arr_mask,
     __global DTYPE * arr_out,
     DTYPE value
 )
