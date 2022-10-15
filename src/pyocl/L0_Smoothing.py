@@ -21,8 +21,21 @@ from .matlab_utils import psf2otf, circshift2D, fftn, ifftn
 from .ocl_func import fancyindex2D, pad2D_constant, crop2D
 from .get_size import get_nearest_bigger
 
-ctx = cl.create_some_context()
+
+ctx = cl.create_some_context(interactive=False)
 queue = cl.CommandQueue(ctx)
+
+def setctx(arg: int):
+    global ctx, queue
+    platforms = cl.get_platforms()
+    ctx = cl.Context(
+        dev_type=cl.device_type.ALL,
+        properties=[(cl.context_properties.PLATFORM, platforms[arg])]
+    )
+    queue = cl.CommandQueue(ctx)
+
+def listpl():
+    return cl.get_platforms()
 
 def split(img):
     return [img[...,n] for n in range(img.shape[-1])]
@@ -57,7 +70,7 @@ def L0_Smoothing(
     lambda_: Optional[float] = 2e-2,
     kappa: Optional[float] = 2.0,
     beta_max: Optional[float] = 1e5,
-    mode='pyvkfft'
+    mode='pyvkfft',
 ):
     S = img / 255
     S = clArray.to_device(queue, S)

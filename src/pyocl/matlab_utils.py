@@ -22,17 +22,26 @@ from L0_Smoothing.pyocl.GCArray import GCArray as clArray
 
 from .ocl_func import circshift2D, pad2D_constant, crop2D
 
-from pyvkfft.fft import fftn as vkfftn
-from pyvkfft.fft import ifftn as vkifftn
 
-import reikna.cluda as cluda
-from reikna.fft import FFT as rkfft
+imported = []
 
-from gpyfft.fft import FFT as gpyfft
-
-
-rk_api = cluda.ocl_api()
-rkfft_func_cache = {}
+def setup_fft_backend(backend):
+    global imported
+    if backend in imported:
+        return
+    if backend=='pyvkfft':
+        from pyvkfft.fft import fftn as vkfftn
+        from pyvkfft.fft import ifftn as vkifftn
+    elif backend=='reikna':
+        import reikna.cluda as cluda
+        from reikna.fft import FFT as rkfft
+        rk_api = cluda.ocl_api()
+        rkfft_func_cache = {}
+    elif backend=='gpyfft':
+        from gpyfft.fft import FFT as gpyfft
+    imported.append(backend)
+    del backend
+    globals().update(locals())
 
 
 def legal_axes(axes, ndim):
@@ -41,6 +50,7 @@ def legal_axes(axes, ndim):
     return axes
 
 def fftn(arr, axes=None, mode='pyvkfft'):
+    setup_fft_backend(mode)
     arr = arr.astype(np.complex64)
     if mode=='pyvkfft':
         out = vkfftn(arr, axes=axes)
@@ -74,6 +84,7 @@ def ifft_wrapper(arr, *args, **kwargs):
     return out
 
 def ifftn(arr, axes=None, mode='pyvkfft'):
+    setup_fft_backend(mode)
     arr = arr.astype(np.complex64)
     if mode=='pyvkfft':
         out = vkifftn(arr, axes=axes)
