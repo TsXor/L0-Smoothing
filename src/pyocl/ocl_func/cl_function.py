@@ -9,8 +9,10 @@ def cltype_map(dtype):
         return 'float'
     elif dtype.type==cltypes.double:
         return 'double'
-    elif dtype.type==cltypes.double:
-        return 'double'
+    elif dtype.type==np.int32:
+        return 'int'
+    elif dtype.type==np.int64:
+        return 'long'
     elif dtype.type==np.complex64:
         return 'float2'
     elif dtype.type==np.complex128:
